@@ -107,7 +107,7 @@ export async function downloadDOCX(
   const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx');
 
   const lines = markdownText.split('\n');
-  const paragraphs: Paragraph[] = [];
+  const paragraphs: any[] = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -138,7 +138,7 @@ export async function downloadDOCX(
       );
     } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       const text = trimmed.replace(/^[-*] /, '');
-      const runs = parseBoldItalic(text);
+      const runs = parseBoldItalic(text, TextRun);
       paragraphs.push(
         new Paragraph({
           children: [new TextRun({ text: '• ' }), ...runs],
@@ -151,7 +151,7 @@ export async function downloadDOCX(
     } else if (trimmed === '') {
       paragraphs.push(new Paragraph({ text: '' }));
     } else {
-      const runs = parseBoldItalic(trimmed);
+      const runs = parseBoldItalic(trimmed, TextRun);
       paragraphs.push(new Paragraph({ children: runs, spacing: { before: 60, after: 60 } }));
     }
   }
@@ -164,10 +164,8 @@ export async function downloadDOCX(
   saveAs(blob, `${filename}.docx`);
 }
 
-function parseBoldItalic(text: string): InstanceType<typeof import('docx').TextRun>[] {
-  // Dynamic import workaround - we use a simple approach
-  const { TextRun } = require('docx');
-  const parts: InstanceType<typeof TextRun>[] = [];
+function parseBoldItalic(text: string, TextRunClass: any): any[] {
+  const parts: any[] = [];
   // Simple bold/italic parsing
   const regex = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|([^*]+))/g;
   let match: RegExpExecArray | null;
@@ -175,20 +173,20 @@ function parseBoldItalic(text: string): InstanceType<typeof import('docx').TextR
   while ((match = regex.exec(text)) !== null) {
     if (match[2]) {
       // Bold italic ***text***
-      parts.push(new TextRun({ text: match[2], bold: true, italics: true }));
+      parts.push(new TextRunClass({ text: match[2], bold: true, italics: true }));
     } else if (match[3]) {
       // Bold **text**
-      parts.push(new TextRun({ text: match[3], bold: true }));
+      parts.push(new TextRunClass({ text: match[3], bold: true }));
     } else if (match[4]) {
       // Italic *text*
-      parts.push(new TextRun({ text: match[4], italics: true }));
+      parts.push(new TextRunClass({ text: match[4], italics: true }));
     } else if (match[5]) {
-      parts.push(new TextRun({ text: match[5] }));
+      parts.push(new TextRunClass({ text: match[5] }));
     }
   }
 
   if (parts.length === 0) {
-    parts.push(new TextRun({ text }));
+    parts.push(new TextRunClass({ text }));
   }
 
   return parts;
